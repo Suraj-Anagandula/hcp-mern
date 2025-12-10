@@ -88,7 +88,7 @@
 
 
 
-const express = require('express');
+ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -99,47 +99,22 @@ require('dotenv').config();
 
 const app = express();
 
-// ---- IMPORTANT: Replace app.listen() with http server ----
-const http = require('http');
-const server = http.createServer(app);
-
-// ---- Add Socket.IO ----
-const { Server } = require('socket.io');
-
-const io = new Server(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST", "PATCH", "DELETE"],
-    credentials: true
-  }
-});
-
-// Export function so controllers can trigger events
-module.exports.emitComplaintUpdate = () => {
-  io.emit("complaintUpdated");
-};
-
-// Socket events
-io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
-
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-  });
-});
-
 // -------- Security middleware --------
 app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+  })
+);
 
 // Rate limiting
-app.use(rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200
-}));
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 200,
+  })
+);
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -149,8 +124,8 @@ const uploadsDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
 app.use("/uploads", express.static(uploadsDir));
 
-// DB
-require('./config/database')();
+// Database
+require("./config/database")();
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
@@ -160,12 +135,14 @@ app.use("/api/user", require("./routes/user"));
 app.use("/api/upload", require("./routes/uploadRoutes"));
 
 app.get("/", (req, res) => {
-  res.json({ status: "Server + Socket.IO running" });
+  res.json({ status: "Server running successfully 🚀" });
 });
 
-// 404
+// 404 route
 app.use((req, res) => res.status(404).json({ message: "Route not found" }));
 
-// ---- IMPORTANT: Use server.listen() NOT app.listen() ----
+// Start server normally
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`🚀 Server running on port ${PORT}`)
+);
